@@ -7,8 +7,8 @@ defmodule LoginServer.Views.AuthView do
 
   def render(:server_list, params) do
     %{
-      :session_id => session_id,
-      :server_list => server_list
+      session_id: session_id,
+      server_list: server_list
     } = params
 
     "NsTeST #{session_id} #{server_list}"

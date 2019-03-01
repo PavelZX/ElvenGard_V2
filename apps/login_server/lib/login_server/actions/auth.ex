@@ -42,7 +42,7 @@ defmodule LoginServer.Actions.Auth do
 
   @doc false
   @spec check_version(map) :: action_return
-  defp check_version(%{:version => version, :client => client} = params) do
+  defp check_version(%{version: version, client: client} = params) do
     if version == @client_version,
       do: {:ok, params},
       else: {:halt, {:error, :TOO_OLD}, client}
@@ -52,7 +52,7 @@ defmodule LoginServer.Actions.Auth do
   @spec decrypt_password(action_return) :: action_return
   defp decrypt_password({:halt, _, _} = error), do: error
 
-  defp decrypt_password({:ok, %{:password => password} = params}) do
+  defp decrypt_password({:ok, %{password: password} = params}) do
     {:ok, %{params | password: Crypto.decrypt_pass(password)}}
   end
 
@@ -62,9 +62,9 @@ defmodule LoginServer.Actions.Auth do
 
   defp get_account_id({:ok, params}) do
     %{
-      :username => username,
-      :password => password,
-      :client => client
+      username: username,
+      password: password,
+      client: client
     } = params
 
     # TODO: Need to call the Auth service here
@@ -101,7 +101,7 @@ defmodule LoginServer.Actions.Auth do
   @spec create_res_packet(action_return) :: action_return
   defp create_res_packet({:halt, _, _} = error), do: error
 
-  defp create_res_packet({:ok, %{:client => client} = params}) do
+  defp create_res_packet({:ok, %{client: client} = params}) do
     res_packet = AuthView.render(:server_list, params)
     {:halt, {:ok, res_packet}, client}
   end
