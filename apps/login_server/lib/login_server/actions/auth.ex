@@ -5,6 +5,7 @@ defmodule LoginServer.Actions.Auth do
 
   alias ElvenGard.Structures.Client
   alias LoginServer.Crypto
+  alias LoginServer.Interfaces
   alias LoginServer.Views.AuthView
 
   @type action_return :: {:ok, map} | {:halt, any, Client.t()}
@@ -67,11 +68,12 @@ defmodule LoginServer.Actions.Auth do
       client: client
     } = params
 
-    # TODO: Need to call the Auth service here
-    if username == "admin" and password == "admin" do
-      {:ok, %{params | account_id: 1}}
-    else
-      {:halt, {:error, :BAD_CREDENTIALS}, client}
+    case Interfaces.get_account_id(username, password) do
+      {:ok, id} ->
+        {:ok, %{params | account_id: id}}
+
+      {:error, _} ->
+        {:halt, {:error, :BAD_CREDENTIALS}, client}
     end
   end
 

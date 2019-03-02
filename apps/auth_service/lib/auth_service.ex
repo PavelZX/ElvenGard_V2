@@ -8,7 +8,9 @@ defmodule AuthService do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {AuthService.Service, name: AuthService}
+      Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
+      Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
+      Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
     ]
 
     opts = [strategy: :one_for_one, name: AuthService.Supervisor]
