@@ -82,8 +82,12 @@ defmodule LoginServer.Actions.Auth do
   defp create_session({:halt, _, _} = error), do: error
 
   defp create_session({:ok, params}) do
-    # TODO: Need to call the Auth or SessionManager service here
-    session_id = 1234
+    %{
+      username: username,
+      password: password
+    } = params
+
+    {:ok, session_id} = Interfaces.create_session(username, password)
 
     {:ok, %{params | session_id: session_id}}
   end

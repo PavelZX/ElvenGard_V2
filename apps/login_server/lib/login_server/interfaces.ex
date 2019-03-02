@@ -12,4 +12,12 @@ defmodule LoginServer.Interfaces do
   def get_account_id(username, password) do
     Service.random_call(:auth_service, {:get_account_id, username, password})
   end
+
+  @doc """
+  Create a session id
+  """
+  @spec create_session(String.t(), String.t()) :: Service.call_return()
+  def create_session(username, password) do
+    Service.random_call(:auth_service, {:create_session, username, password})
+  end
 end

@@ -1,6 +1,9 @@
 defmodule ElvenGard.Service do
   @moduledoc """
-  Documentation for ElvenGard.
+  Documentation for ElvenGard.Service
+
+  If more performance is needed for inter-node communication, see:
+  https://github.com/discordapp/manifold
   """
 
   @type call_return :: {:ok, term} | {:error, term}

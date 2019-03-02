@@ -10,7 +10,7 @@ defmodule AuthService do
     children = [
       Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
       Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
-      Supervisor.child_spec({AuthService.Service, []}, id: make_ref()),
+      Supervisor.child_spec({AuthService.Service, []}, id: make_ref())
     ]
 
     opts = [strategy: :one_for_one, name: AuthService.Supervisor]
