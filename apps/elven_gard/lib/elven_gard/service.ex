@@ -37,7 +37,7 @@ defmodule ElvenGard.Service do
   def cast(name, data) do
     name
     |> :pg2.get_closest_pid()
-    |> GenServer.cast(data)
+    |> Manifold.send(data)
   end
 
   @doc """
@@ -59,6 +59,6 @@ defmodule ElvenGard.Service do
     name
     |> :pg2.get_members()
     |> Enum.random()
-    |> GenServer.cast(data)
+    |> Manifold.send(data)
   end
 end
