@@ -19,16 +19,14 @@ defmodule ElvenGard.Helpers.Frontend do
   @callback handle_halt_ok(client :: Client.t(), args :: term) :: handle_return
   @callback handle_halt_error(client :: Client.t(), error :: conn_error) :: handle_return
 
-  @doc """
-  Use ElvenGard.Helpers.Frontend behaviour
-  """
+  @doc false
   defmacro __using__(opts) do
     parent = __MODULE__
     caller = __CALLER__.module
     port = Keyword.get(opts, :port, 3000)
     encoder = Keyword.get(opts, :packet_encoder)
     handler = Keyword.get(opts, :packet_handler)
-    use_opts = Keyword.put(opts, :port, port)
+    final_opts = Keyword.put(opts, :port, port)
 
     # Check is there is any encoder
     unless encoder do
@@ -41,53 +39,72 @@ defmodule ElvenGard.Helpers.Frontend do
     end
 
     quote do
+      use GenServer
+
+      alias ElvenGard.Helpers.FrontendProtocol
       alias ElvenGard.Structures.Client
 
       @behaviour unquote(parent)
-      @behaviour :ranch_protocol
-
-      # TODO: Use `Application.get_env` inside function for a live update
-      @timeout Application.get_env(:elven_gard, :response_timeout, 2000)
 
       @doc false
-      def child_spec(opts) do
-        listener_name = __MODULE__
-        num_acceptors = Application.get_env(:elven_gard, :num_acceptors, 10)
-        transport = :ranch_tcp
-        transport_opts = [port: unquote(port)]
-        protocol = __MODULE__
-        protocol_opts = []
-
-        {:ok, _useless} = handle_init(unquote(use_opts))
-
-        :ranch.child_spec(
-          listener_name,
-          num_acceptors,
-          transport,
-          transport_opts,
-          protocol,
-          protocol_opts
-        )
+      def start_link(args) do
+        GenServer.start_link(__MODULE__, unquote(final_opts), name: __MODULE__)
       end
 
       @doc false
       @impl true
-      def start_link(ref, socket, transport, protocol_options) do
+      def init(opts) do
+        ranch_opts = [port: Keyword.get(opts, :port, 3000)]
+
+        # TODO: Use `protocol_opts` later for ranch options
+        # cf. https://ninenines.eu/docs/en/ranch/1.7/manual/ranch.'start_listener'/
+        {:ok, _protocol_opts} = handle_init(opts)
+
+        {:ok, pid} =
+          :ranch.start_listener(
+            __MODULE__,
+            :ranch_tcp,
+            ranch_opts,
+            __MODULE__,
+            opts
+          )
+      end
+
+      unquote(protocol_implementation(final_opts))
+      unquote(default_implementations())
+    end
+  end
+
+  @doc false
+  @spec protocol_implementation(list) :: term
+  defp protocol_implementation(opts) do
+    quote do
+      unquote(protocol_prelude(opts))
+      unquote(protocol_handlers(opts))
+      unquote(protocol_ending(opts))
+    end
+  end
+
+  @doc false
+  @spec protocol_prelude(list) :: term
+  defp protocol_prelude(opts) do
+    encoder = Keyword.get(opts, :packet_encoder)
+
+    quote do
+      @doc false
+      def start_link(ref, socket, transport, _protocol_options) do
         opts = [
           ref,
           socket,
-          transport,
-          protocol_options
+          transport
         ]
 
         pid = :proc_lib.spawn_link(__MODULE__, :init, opts)
         {:ok, pid}
       end
 
-      @doc """
-      Accept Ranch ack and handle packets
-      """
-      def init(ref, socket, transport, _) do
+      @doc false
+      def init(ref, socket, transport) do
         with :ok <- :ranch.accept_ack(ref),
              :ok = transport.setopts(socket, [{:active, true}]),
              {:ok, client} <- handle_connection(socket, transport) do
@@ -95,11 +112,17 @@ defmodule ElvenGard.Helpers.Frontend do
           :gen_server.enter_loop(__MODULE__, [], final_client, 10_000)
         end
       end
+    end
+  end
 
-      #
-      # All GenServer handles
-      #
+  @doc false
+  @spec protocol_handlers(list) :: term
+  defp protocol_handlers(opts) do
+    encoder = Keyword.get(opts, :packet_encoder)
+    handler = Keyword.get(opts, :packet_handler)
 
+    quote do
+      @impl true
       def handle_info({:tcp, socket, data}, %Client{} = client) do
         # TODO: Manage errors on `handle_message`: don't execute the encoder
         {:ok, tmp_state} = handle_message(client, data)
@@ -125,29 +148,36 @@ defmodule ElvenGard.Helpers.Frontend do
         end
       end
 
+      @impl true
       def handle_info({:tcp_closed, _socket}, %Client{} = client) do
         {:ok, new_state} = handle_disconnection(client, :normal)
         {:stop, :normal, new_state}
       end
 
+      @impl true
       def handle_info({:tcp_error, _socket, reason}, %Client{} = client) do
         {:ok, new_state} = handle_error(client, reason)
         {:stop, reason, new_state}
       end
 
+      @impl true
       def handle_info(:timeout, %Client{} = client) do
         {:ok, new_state} = handle_error(client, :timeout)
         {:stop, :normal, new_state}
       end
+    end
+  end
 
-      #
-      # Private function
-      #
+  @doc false
+  @spec protocol_ending(list) :: term
+  defp protocol_ending(opts) do
+    handler = Keyword.get(opts, :packet_handler)
 
+    quote do
       @spec do_handle_packet(list | list(list), Client.t()) ::
-              {:cont, unquote(parent).state}
-              | {:halt, {:ok, term}, unquote(parent).state}
-              | {:halt, {:error, unquote(parent).conn_error()}, unquote(parent).state}
+              {:cont, __MODULE__.state()}
+              | {:halt, {:ok, term}, __MODULE__.state()}
+              | {:halt, {:error, __MODULE__.conn_error()}, __MODULE__.state()}
       defp do_handle_packet([[_header | _params] | _rest] = packet_list, client) do
         Enum.reduce_while(packet_list, {:cont, client}, fn packet, {_, client} ->
           res = do_handle_packet(packet, client)
@@ -187,7 +217,7 @@ defmodule ElvenGard.Helpers.Frontend do
         {:stop, :normal, final_client}
       end
 
-      @spec close_socket(unquote(parent).handle_return(), term) :: Client.t()
+      @spec close_socket(__MODULE__.handle_return(), term) :: Client.t()
       defp close_socket({:ok, %Client{} = client}, reason), do: do_close_socket(client, reason)
 
       defp close_socket({:error, _, %Client{} = client}, reason),
@@ -204,11 +234,13 @@ defmodule ElvenGard.Helpers.Frontend do
         transport.close(socket)
         final_client
       end
+    end
+  end
 
-      #
-      # Default implementations
-      #
-
+  @doc false
+  @spec default_implementations() :: term
+  defp default_implementations() do
+    quote do
       def handle_init(_args), do: {:ok, nil}
       def handle_connection(socket, transport), do: Client.new(socket, transport)
       def handle_disconnection(client, _reason), do: client
