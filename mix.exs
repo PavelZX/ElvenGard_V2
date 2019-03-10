@@ -56,6 +56,7 @@ defmodule ElvenGard.MixProject do
     [
       {:ranch, "~> 1.5"},
       {:elixir_uuid, "~> 1.2"},
+      {:manifold, "~> 1.0"},
       {:ex_doc, "~> 0.19.0", only: :dev, runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false}
     ]

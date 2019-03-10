@@ -25,10 +25,10 @@ defmodule ElvenGard.Helpers.Frontend do
   defmacro __using__(opts) do
     parent = __MODULE__
     caller = __CALLER__.module
-    port = get_in(opts, [:port]) || 3000
-    encoder = get_in(opts, [:packet_encoder])
-    handler = get_in(opts, [:packet_handler])
-    use_opts = put_in(opts, [:port], port)
+    port = Keyword.get(opts, :port, 3000)
+    encoder = Keyword.get(opts, :packet_encoder)
+    handler = Keyword.get(opts, :packet_handler)
+    use_opts = Keyword.put(opts, :port, port)
 
     # Check is there is any encoder
     unless encoder do
@@ -58,11 +58,7 @@ defmodule ElvenGard.Helpers.Frontend do
         protocol = __MODULE__
         protocol_opts = []
 
-        # TODO: Use args (pass them to ranch opts ?)
-        {:ok, _args} =
-          opts
-          |> Enum.concat(unquote(use_opts))
-          |> handle_init()
+        {:ok, _useless} = handle_init(unquote(use_opts))
 
         :ranch.child_spec(
           listener_name,
