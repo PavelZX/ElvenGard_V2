@@ -47,6 +47,7 @@ defmodule ElvenGard.MixProject do
 
   def application do
     [
+      mod: {ElvenGard, []},
       extra_applications: [:logger]
     ]
   end
