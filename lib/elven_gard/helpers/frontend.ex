@@ -48,7 +48,8 @@ defmodule ElvenGard.Helpers.Frontend do
 
       @doc false
       def start_link(args) do
-        GenServer.start_link(__MODULE__, unquote(final_opts), name: __MODULE__)
+        final_args = Keyword.put_new(args, :name, __MODULE__)
+        GenServer.start_link(__MODULE__, unquote(final_opts), final_args)
       end
 
       @doc false
@@ -62,7 +63,7 @@ defmodule ElvenGard.Helpers.Frontend do
 
         {:ok, pid} =
           :ranch.start_listener(
-            __MODULE__,
+            make_ref(),
             :ranch_tcp,
             ranch_opts,
             __MODULE__,
