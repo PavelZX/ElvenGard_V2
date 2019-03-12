@@ -107,7 +107,7 @@ defmodule ElvenGard.Helpers.Frontend do
       @doc false
       def init(ref, socket, transport) do
         with :ok <- :ranch.accept_ack(ref),
-             :ok = transport.setopts(socket, [{:active, true}]),
+             :ok = transport.setopts(socket, [active: true, nodelay: true]),
              {:ok, client} <- handle_connection(socket, transport) do
           final_client = %Client{client | encoder: unquote(encoder)}
           :gen_server.enter_loop(__MODULE__, [], final_client, 10_000)
