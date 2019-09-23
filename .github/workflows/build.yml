@@ -29,18 +29,20 @@ jobs:
         otp-version: ${{matrix.pair.otp-version}}
 
     - name: Install Dependencies
-      run: mix deps.get
-      env:
-        MIX_ENV: test
+      run: MIX_ENV=test mix deps.get
 
-    - name: Run tests and linters
-      run: |
-        mix format --dry-run --check-formatted
-        mix test --trace
-      env:
-        MIX_ENV: test
+    - name: Run formatter
+      run: mix format --dry-run --check-formatted
+
+    - name: Run tests
+      run: MIX_ENV=test mix test --trace
+
+    - name: Generate code coverage
+      run: MIX_ENV=test mix coveralls.json
 
     - name: Push code coverage
-      run: mix coveralls.travis
-      env:
-        MIX_ENV: test
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel-finished: true
+        path-to-lcov: cover/excoveralls.json
