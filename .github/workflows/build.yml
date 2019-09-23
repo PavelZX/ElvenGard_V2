@@ -1,0 +1,46 @@
+#
+# Currently, Github Actions does not have a cache system for dependencies.
+# They should have it by mid-November
+# => https://github.community/t5/GitHub-Actions/Caching-files-between-GitHub-Action-executions/m-p/30974/highlight/true#M630
+#
+# TODO: Adding caching system when available
+#
+name: build
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    strategy:
+      matrix:
+        elixir: [1.8.x, 1.9.x]
+        otp: [20.x, 21.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-elixir@v1
+      with:
+        elixir-version: ${{matrix.elixir}}
+        otp-version: ${{matrix.otp}}
+
+    - name: Install Dependencies
+      run: |
+        mix local.rebar --force
+        mix local.hex --force
+        mix deps.get
+      env:
+        MIX_ENV: test
+
+    - name: Run tests and linters
+      run: |
+        mix format --dry-run --check-formatted
+        mix test --trace
+      env:
+        MIX_ENV: test
+
+    - name: Push code coverage
+      run: mix coveralls.travis
+      env:
+        MIX_ENV: test
