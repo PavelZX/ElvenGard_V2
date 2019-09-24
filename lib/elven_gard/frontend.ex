@@ -111,7 +111,7 @@ defmodule ElvenGard.Frontend do
         # TODO: Manage errors on `handle_message`: don't execute the protocol
         {:ok, tmp_state} = handle_message(client, data)
 
-        payload = unquote(protocol).complete_decode(data, tmp_state)
+        payload = unquote(protocol).decode(data, tmp_state)
 
         case do_handle_packet(payload, tmp_state) do
           {:cont, final_client} ->

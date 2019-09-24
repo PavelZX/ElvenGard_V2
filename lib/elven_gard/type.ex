@@ -16,7 +16,7 @@ defmodule ElvenGard.Type do
   @doc """
   Transforms a packet received by a client into a term that can be used by `ElvenGard.Protocol`
 
-  NOTE: The result of this function will then be used by `c:ElvenGard.Protocol.decode/1`
+  NOTE: The result of this function will then be used by `c:ElvenGard.Protocol.decode/2`
   """
   @callback decode(encoded_term, opts :: list) :: term
 

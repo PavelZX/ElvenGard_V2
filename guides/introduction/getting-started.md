@@ -119,20 +119,12 @@ defmodule LoginServer.PacketProtocol do
 
   # Just add a line feed before sending our packets to clients
   @impl ElvenGard.Protocol
-  def encode(data), do: data <> "\n"
+  def encode(data, _client), do: data <> "\n"
 
-  @impl ElvenGard.Protocol
-  def decode(data) do
-    res =
-      data
-      |> String.trim()  # Removes the trailing line feed
-      |> String.split(" ", parts: 2) # Detaches the packet header from parameters
-
-    # `decode/1` must return a tuple like `{packet_header, params}`
-    case res do
-      [header] -> {header, ""}
-      _ -> List.to_tuple(res)
-    end
+  # Removes the trailing line feed and split packets with '\n' (one packet per line)
+  @impl ElvenGard.Protocol.Textual
+  def textual_decode(data, _client) do
+    String.split(data, "\n", trim: true)
   end
 end
 ```

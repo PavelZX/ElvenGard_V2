@@ -38,7 +38,7 @@ defmodule ElvenGard.Structures.Client do
       protocol: protocol
     } = client
 
-    encoded_message = protocol.encode(message)
+    encoded_message = protocol.encode(message, client)
     transport.send(socket, encoded_message)
   end
 
