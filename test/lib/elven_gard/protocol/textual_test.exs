@@ -68,6 +68,19 @@ defmodule ElvenGard.Protocol.TextualTest do
         defdecoder InvalidDecoder, do: :ok
       end
     end
+    
+    test "textual_encode/2 is not defined" do
+      needle = ~r"function textual_encode/2 required by behaviour"
+
+      assert_raise RuntimeError, needle, fn ->
+        defmodule InvalidEncoder do
+          use ElvenGard.Protocol.Textual, model: SimplePacketHandler, separator: " "
+      
+          def handle_decode_fail(_header, _params, _model), do: {:error, :decode_fail}
+          def textual_decode(data, _client), do: data
+        end
+      end
+    end
   end
 
   describe "Testing `Textual` behaviour (Single packet):" do
