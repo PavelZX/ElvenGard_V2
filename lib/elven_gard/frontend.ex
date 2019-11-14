@@ -151,10 +151,14 @@ defmodule ElvenGard.Frontend do
       # Private function
       #
 
-      @spec do_handle_packet({term, map} | list(tuple), Client.t()) ::
+      @spec do_handle_packet({:error, term} | {term, map} | [{term, map}, ...], Client.t()) ::
               {:cont, unquote(parent).state}
               | {:halt, {:ok, term}, unquote(parent).state}
               | {:halt, {:error, unquote(parent).conn_error()}, unquote(parent).state}
+      defp do_handle_packet({:error, reason}, client) do
+        {:cont, client}
+      end
+
       defp do_handle_packet({header, params}, client) do
         unquote(handler).handle_packet(header, params, client)
       end
@@ -170,7 +174,7 @@ defmodule ElvenGard.Frontend do
         raise """
         unable to handle packet #{inspect(x)}.
         Please check that your protocol returns a tuple in the form of {header, \
-        %{param1: :val1, param2: :val2, ...} or a list of tuples
+        %{param1: :val1, param2: :val2, ...}, a list of this tuple or {:error, reason}
         """
       end
 

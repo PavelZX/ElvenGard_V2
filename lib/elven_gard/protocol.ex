@@ -35,7 +35,7 @@ defmodule ElvenGard.Protocol do
   The result of this function will then be used by `c:ElvenGard.Packet.handle_packet/3`
   """
   @callback decode(data :: binary, client :: Client.t()) ::
-              {packet_header, map} | [{packet_header, map}, ...]
+              {:error, term} | {packet_header, map} | [{packet_header, map}, ...]
 
   @doc """
   Use ElvenGard.Protocol behaviour
