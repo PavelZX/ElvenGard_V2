@@ -118,8 +118,8 @@ defmodule LoginServer.PacketProtocol do
     separator: " "
 
   # Just add a line feed before sending our packets to clients
-  @impl ElvenGard.Protocol
-  def encode(data, _client), do: data <> "\n"
+  @impl ElvenGard.Protocol.Textual
+  def textual_encode(data, _client), do: data <> "\n"
 
   # Removes the trailing line feed and split packets with '\n' (one packet per line)
   @impl ElvenGard.Protocol.Textual
