@@ -48,7 +48,7 @@ defmodule ElvenGard.Protocol do
 
       alias ElvenGard.Structures.Client
 
-      @before_compile unquote(parent)
+      @after_compile unquote(parent)
 
       #
       # Protocol behaviour
@@ -61,27 +61,27 @@ defmodule ElvenGard.Protocol do
     end
   end
 
-  defmacro __before_compile__(env) do
-    unless Module.defines?(env.module, {:encode, 2}) do
+  defmacro __after_compile__(env, _bytecode) do
+    unless Kernel.function_exported?(env.module, :encode, 2) do
       raise """
-      function encode/2 required by behaviour #{__MODULE__} is not implemented \
-      (in module #{env.module}).
+      function encode/2 required by behaviour #{inspect(__MODULE__)} is not implemented \
+      (in module #{inspect(env.module)}).
 
       Example:
-        @impl true
+        @impl #{inspect(__MODULE__)}
         def encode(data, _client) do
           Crypto.encrypt(data)
         end
       """
     end
 
-    unless Module.defines?(env.module, {:decode, 2}) do
+    unless Kernel.function_exported?(env.module, :decode, 2) do
       raise """
-      function decode/2 required by behaviour #{__MODULE__} is not implemented \
+      function decode/2 required by behaviour #{inspect(__MODULE__)} is not implemented \
       (in module #{env.module}).
 
       Example:
-        @impl true
+        @impl #{inspect(__MODULE__)}
         def decode(data, _client) do
           res =
             data
